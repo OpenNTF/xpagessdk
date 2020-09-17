@@ -26,6 +26,7 @@ import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Properties;
@@ -33,11 +34,14 @@ import java.util.Set;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.ILog;
+import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.NullProgressMonitor;
+import org.eclipse.core.runtime.Path;
+import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.Status;
-import org.eclipse.core.runtime.SubProgressMonitor;
+import org.eclipse.core.runtime.SubMonitor;
 import org.eclipse.debug.core.DebugPlugin;
 import org.eclipse.debug.core.ILaunch;
 import org.eclipse.debug.core.ILaunchConfiguration;
@@ -51,10 +55,10 @@ import org.eclipse.pde.launching.IPDELauncherConstants;
 import org.eclipse.ui.PlatformUI;
 import org.openntf.xsp.sdk.Activator;
 import org.openntf.xsp.sdk.commons.osgi.LaunchUtil;
-import org.openntf.xsp.sdk.exceptions.AbortException;
 import org.openntf.xsp.sdk.commons.platform.INotesDominoPlatform;
 import org.openntf.xsp.sdk.commons.utils.CommonUtils;
 import org.openntf.xsp.sdk.commons.utils.StringUtil;
+import org.openntf.xsp.sdk.exceptions.AbortException;
 
 /**
  * @author dtaieb
@@ -141,7 +145,7 @@ public abstract class AbstractDominoLaunchConfiguration extends EquinoxLaunchCon
 
 			// Call preLaunchCheck to fill the bundleMap
 			try {
-				preLaunchCheck(configuration, launch, new SubProgressMonitor(monitor, 2));
+				preLaunchCheck(configuration, launch, SubMonitor.convert(monitor, 2));
 			} catch (CoreException e) {
 				if (e.getStatus().getSeverity() == IStatus.CANCEL) {
 					monitor.setCanceled(true);
@@ -326,7 +330,7 @@ public abstract class AbstractDominoLaunchConfiguration extends EquinoxLaunchCon
 	private Map<String, IPluginModelBase> computeTargetModels(Map<?, ?> workspacePlugins, String eclipseLocation) {
 		Map<String, IPluginModelBase> modelMap = new HashMap<String, IPluginModelBase>();
 		
-		URL[] pluginPaths = PluginPathFinder.getPluginPaths(eclipseLocation, false);
+		URL[] pluginPaths = PluginPathFinder.scanLocations(getSites(eclipseLocation, false));
 		PDEState pdeState;
 		// The signature for PDEState's constructor changed in Eclipse 2019-03
 		// https://github.com/eclipse/eclipse.pde.ui/commit/3db2f1e50aa7ae5efc0e07a1f26eecedd80a7159#diff-a56311895a435ece21aa9ef829607884
@@ -401,4 +405,89 @@ public abstract class AbstractDominoLaunchConfiguration extends EquinoxLaunchCon
 	public abstract String[] getProfiles();
 	public abstract String getName();
 	
+	// *******************************************************************************
+	// * Code from older PluginPathFinder build for patched compatibility
+	// *******************************************************************************
+	
+	/**
+	 *
+	 * @param platformHome
+	 * @param features false for plugin sites, true for feature sites
+	 * @return array of ".../plugins" or ".../features" Files
+	 */
+	private static File[] getSites(String platformHome, boolean features) {
+		HashSet<File> sites = new HashSet<>();
+		File file = new File(platformHome, features ? "features" : "plugins"); //$NON-NLS-1$ //$NON-NLS-2$
+		if (!features && !file.exists()) {
+			file = new File(platformHome);
+		}
+		if (file.exists()) {
+			sites.add(file);
+		}
+
+		File[] linkFiles = new File(platformHome + IPath.SEPARATOR + "links").listFiles(); //$NON-NLS-1$
+		if (linkFiles != null) {
+			for (File linkFile : linkFiles) {
+				String path = getSitePath(platformHome, linkFile, features);
+				if (path != null) {
+					sites.add(new File(path));
+				}
+			}
+		}
+
+		// If there is no features/plugins folder and no linked files, try the home location
+		if (sites.isEmpty()) {
+			file = new File(platformHome);
+			if (file.exists()) {
+				sites.add(file);
+			}
+		}
+
+		return sites.toArray(new File[sites.size()]);
+	}
+	
+	public static boolean isDevLaunchMode() {
+		if (Boolean.getBoolean("eclipse.pde.launch")) { //$NON-NLS-1$
+			return true;
+		}
+		String[] args = Platform.getApplicationArgs();
+		for (String arg : args) {
+			if (arg.equals("-pdelaunch")) { //$NON-NLS-1$
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	/**
+	 *
+	 * @param platformHome
+	 * @param linkFile
+	 * @param features false for plugins, true for features
+	 * @return path of plugins or features directory of an extension site
+	 */
+	private static String getSitePath(String platformHome, File linkFile, boolean features) {
+		String prefix = new Path(platformHome).removeLastSegments(1).toString();
+		Properties properties = new Properties();
+		try (FileInputStream fis = new FileInputStream(linkFile)) {
+			properties.load(fis);
+			String path = properties.getProperty("path"); //$NON-NLS-1$
+			if (path != null) {
+				if (!new Path(path).isAbsolute()) {
+					path = prefix + IPath.SEPARATOR + path;
+				}
+				path += IPath.SEPARATOR + "eclipse" + IPath.SEPARATOR; //$NON-NLS-1$
+				if (features) {
+					path += "features"; //$NON-NLS-1$
+				} else {
+					path += "plugins"; //$NON-NLS-1$
+				}
+				if (new File(path).exists()) {
+					return path;
+				}
+			}
+		} catch (IOException e) {
+		}
+		return null;
+	}
 }

@@ -25,6 +25,7 @@ Bundle-ManifestVersion: 2
 Bundle-Vendor: OpenNTF
 Import-Package: org.apache.commons.lang,
  org.eclipse.core.resources,
+ org.eclipse.core.runtime,
  org.eclipse.core.variables,
  org.eclipse.debug.core,
  org.eclipse.debug.internal.core,
@@ -33,16 +34,16 @@ Import-Package: org.apache.commons.lang,
  org.eclipse.jdt.internal.ui.wizards,
  org.eclipse.jdt.launching,
  org.eclipse.jdt.ui.wizards,
+ org.eclipse.jface,
  org.eclipse.jface.preference,
  org.eclipse.jface.text,
+ org.eclipse.pde.launching,
  org.eclipse.swt,
+ org.eclipse.ui,
  org.eclipse.ui.actions,
  org.eclipse.ui.forms,
  org.eclipse.ui.forms.widgets,
- org.eclipse.ui,
  org.eclipse.ui.plugin,
- org.eclipse.jface,
- org.eclipse.pde.launching,
- org.eclipse.core.runtime
+ org.eclipse.update.configurator
 
 
