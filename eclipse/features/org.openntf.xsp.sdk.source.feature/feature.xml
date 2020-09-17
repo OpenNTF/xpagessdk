@@ -19,7 +19,7 @@
 <feature
       id="org.openntf.xsp.sdk.source.feature"
       label="OpenNTF XPages SDK Source"
-      version="1.5.0.qualifier"
+      version="1.6.0.qualifier"
       provider-name="OpenNTF">
 
    <description url="http://www.openntf.org">
