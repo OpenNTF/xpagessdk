@@ -16,3 +16,6 @@ Licensed under Apache License 2.0
 Copyright 2001-2014 The Apache Software Foundation
 Available from https://commons.apache.org/
 
+Eclipse PDE pre-2020-09
+Licensed under the Eclipse Public License v2.0
+Available from https://git.eclipse.org/c/pde/eclipse.pde.ui.git/tree/ui/org.eclipse.pde.core/src/org/eclipse/pde/internal/core/PluginPathFinder.java?id=11a09692b07fd57ba1e9e85f225edff215eb5a0f

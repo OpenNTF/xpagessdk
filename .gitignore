@@ -17,3 +17,5 @@ build/
 
 # Binary output
 *.class
+
+pom.xml.versionsBackup

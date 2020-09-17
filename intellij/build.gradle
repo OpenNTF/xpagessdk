@@ -4,7 +4,7 @@ plugins {
 }
 
 group 'org.openntf.xsp'
-version '1.4.0'
+version '1.5.0'
 
 sourceCompatibility = 1.8
 
@@ -15,7 +15,7 @@ repositories {
 
 dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
-    compile group: 'org.openntf.xsp', name: 'org.openntf.xsp.sdk.commons', version: "1.4.0"
+    compile group: 'org.openntf.xsp', name: 'org.openntf.xsp.sdk.commons', version: "1.5.0"
 }
 
 intellij {
